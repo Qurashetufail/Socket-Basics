@@ -1,18 +1,18 @@
 var socket = io();
 
 //when the connection establishes
-socket.on('connect', function (){
-	console.log('Connected to socket.io server');
-});
+// socket.on('connect', function (){
+// 	console.log('Connected to socket.io server');
+// });
 
 
 //listening for the event from server
 socket.on('message', function(message){
-	console.log('New message:');
-	console.log(message.text);
+	var momentTimeStamp=moment.utc(message.timeStamp);
+	console.log('New message:'+message.text);
 
 	//target by class
-	jQuery('.messages').append('<p>' + message.text + '</p>');
+	jQuery('.messages').append('<p><strong>' + momentTimeStamp.format('h:mm a') + '</strong> ' + message.text + '</p>');
 });
 
 //handles submitting of new message
@@ -30,6 +30,6 @@ $form.on('submit',function (event) {
 		text:$message.val()
 	});
 
-	//deleting the value after sending the text
+	//resetting the value after sending the text
 	$message.val('');
 });
