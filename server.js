@@ -15,22 +15,36 @@ app.use(express.static(__dirname + '/public'));
 // 	console.log('User connectec via socket.io!');
 // });
 
+var clientInfo = {};
+
 //single event
 io.on('connection',function (socket){
 	console.log('User connectec via socket.io!');
+
+	socket.on('joinRoom', function (req){
+		//for dynamic attribute name
+		clientInfo[socket.id] = req;
+		socket.join(req.room);
+		socket.broadcast.to(req.room).emit('message',{
+			name: 'System',
+			text: req.name + ' has joined',
+			timestamp: moment().valueOf()
+		})
+	});
 
 	socket.on('message', function(message){
 		console.log('Message received:'+message.text);
 
 		//resetting time values
-		message.timeStamp = now.valueOf();
-		io.emit('message',message);
+		message.timestamp = moment().valueOf();
+		io.to(clientInfo[socket.id].room).emit('message',message);
 		// socket.broadcast.emit('message',message);
 	});
 
 	socket.emit('message',{
+		name: 'System',
 		text: 'Welcome to the chat application!',
-		timeStamp: now.valueOf()
+		timestamp: moment().valueOf()
 	});
 });
 
