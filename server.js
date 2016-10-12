@@ -17,13 +17,36 @@ app.use(express.static(__dirname + '/public'));
 
 var clientInfo = {};
 
+//sens current users to provided sockets
+function sendCurrentUsers (socket) {
+	var info = clientInfo[socket.id];
+	var users = [];
+
+	if(typeof info === 'undefined'){
+		return;
+	}
+
+//takes an objects and returns an arrays of attributes of an object
+	Object.keys(clientInfo).forEach(function (socketId){
+		var userinfo = clientInfo[socketId];
+
+		if(info.room === userinfo.room) {
+			users.push(userinfo.name);
+		}
+	});
+	socket.emit('message', {
+		name: 'System',
+		text: 'Current users:' + users.join(', '),
+		timestamp: moment().valueOf()
+	})
+}
 //single event
 io.on('connection',function (socket){
 	console.log('User connectec via socket.io!');
 
 	socket.on('disconnect',function () {
 		var userData = clientInfo[socket.id];
-		
+
 		if (typeof userData !== 'undefined') {
 			socket.leave(userData.room);
 			io.to(userData.room).emit('message',{
@@ -50,10 +73,14 @@ io.on('connection',function (socket){
 	socket.on('message', function(message){
 		console.log('Message received:'+message.text);
 
-		//resetting time values
-		message.timestamp = moment().valueOf();
-		io.to(clientInfo[socket.id].room).emit('message',message);
-		// socket.broadcast.emit('message',message);
+		if (message.text === '@currentUsers') {
+			sendCurrentUsers(socket);
+		} else {
+			//resetting time values
+			message.timestamp = moment().valueOf();
+			io.to(clientInfo[socket.id].room).emit('message',message);
+			// socket.broadcast.emit('message',message);
+		}
 	});
 
 	socket.emit('message',{
